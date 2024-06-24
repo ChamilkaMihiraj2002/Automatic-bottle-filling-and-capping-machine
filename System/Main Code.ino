@@ -136,7 +136,7 @@ void loop() {
       
     }else {
       stopConveyor();
-      moveBottleToHolder();
+      moveBottleToHolderToStart();
     }
   } else {
     key = getKey();
@@ -163,6 +163,15 @@ void displayFlowVolume(float flowRate, float totalVolume) {
 
 void moveBottleToHolder() {
   for (int i = 0; i < 200; i++) {
+    digitalWrite(stepPin, HIGH); 
+    delayMicroseconds(6000); // Adjust the delay to control the speed
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(6000); // Adjust the delay to control the speed
+  }
+}
+
+void moveBottleToHolderToStart() {
+  for (int i = 0; i < 2; i++) {
     digitalWrite(stepPin, HIGH); 
     delayMicroseconds(6000); // Adjust the delay to control the speed
     digitalWrite(stepPin, LOW);
