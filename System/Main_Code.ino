@@ -131,6 +131,7 @@ void loop() {
               key = getKey();
               if (key == 'A')
               {
+                key = '\0';// Reset the code
                 break;
               }
             }
