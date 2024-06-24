@@ -123,7 +123,7 @@ void loop() {
           delay(2000);
           moveBottleToHolder(100);
           int hasObsacleCappCheckIR = digitalRead(CappCheckIR);
-          if(hasObsacleCappCheckIR == LOW) {
+          if(hasObsacleCappCheckIR == HIGH) {
             displayMessage("Capp not found");
             beep(1000, 500);
             while (true) {
@@ -136,6 +136,10 @@ void loop() {
             }
           } else {
             displayMessage("Capp ok");
+            moveBottleToHolder(400);
+            digitalWrite(dirPin, HIGH);
+            moveBottleToHolder(400);
+            digitalWrite(dirPin, LOW);
           }
         }
       }
