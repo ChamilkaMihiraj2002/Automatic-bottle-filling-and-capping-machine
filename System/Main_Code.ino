@@ -112,6 +112,7 @@ void loop() {
         displayMessage("Bottel Set..");
         int hasObsaclebottelCheckIR = digitalRead(bottelCheckIR);
         if(hasObsaclebottelCheckIR == HIGH) {
+          delay(2000);
           moveBottleToHolder(200);
           delay(4000);
           fillBottle(volume);
@@ -126,7 +127,12 @@ void loop() {
             displayMessage("Capp not found");
             beep(1000, 500);
             while (true) {
-              // Stop code execution
+              displayMessage("Press 'A' to restart");
+              key = getKey();
+              if (key == 'A')
+              {
+                break;
+              }
             }
           } else {
             displayMessage("Capp ok");
