@@ -132,6 +132,7 @@ void loop() {
               if (key == 'A')
               {
                 key = '\0';// Reset the code
+                loop();
                 break;
               }
             }
