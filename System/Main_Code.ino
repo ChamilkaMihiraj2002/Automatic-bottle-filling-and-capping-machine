@@ -1,7 +1,6 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <Keypad.h>
-#include <FlowSensor.h>
 #include <Servo.h>
 Servo servo;
 
@@ -23,30 +22,42 @@ byte colPins[COLS] = {15, 14, 13, 12};    // Column pinouts of the keypad
 
 
 // sensor pins
-const int proximitySensorPin = 3;//set
-const int startPointIR = 0;//set
-const int bottelCheckIR = 22;//set
-const int CappCheckIR = 2;//set
-const int flowSensorPin = 7;//set
-const int buzzerPin = 24;// not set
+const int proximitySensorPin = 3;
+const int startPointIR = 0;
+const int bottelCheckIR = 22;
+const int CappCheckIR = 2;
+const int flowSensorPin = 7;
+const int buzzerPin = 24;
+const int stepmotorPowerPin = 26;
 
 //motor control pins
 //Nema 17
-const int stepPin = 5;//CLK+   set
-const int dirPin = 6;//CW+     set
-const int enablePin = 4;//EN+  set
+const int stepPin = 5;//CLK+   
+const int dirPin = 6;//CW+   
+const int enablePin = 4;//EN+  
 
 //conveyor
-const int conveyorMotorPin = 9;// set
+const int conveyorMotorPin = 9;
 
 //Capper Motor Relay and servo motor
-const int capperMotorPin = 10;//set
-int servoPin = 11;//set
+const int capperMotorPin = 10;
+int servoPin = 11;
 
 //Water Pump Relay and flow sensor
-const int waterPumpPin = 8;//set
-const uint16_t sensorType = 450; 
-FlowSensor flowSensor(sensorType, flowSensorPin);
+const int waterPumpPin = 8;
+
+// Variables to store the pulse count and flow rate
+volatile uint16_t pulseCount = 0;
+float flowRate = 0.0;
+float totalVolume = 0.0; // Total volume in liters
+
+// Time variables for calculating flow rate
+unsigned long lastTime = 0;
+unsigned long interval = 1000; // Interval for calculating flow rate (1 second)
+
+// Calibration factor 
+const float calibrationFactor = 4.5; 
+
 
 char key;
 int volume = 0;
@@ -65,15 +76,15 @@ void setup() {
   pinMode(conveyorMotorPin, OUTPUT);
   pinMode(capperMotorPin, OUTPUT);
   pinMode(waterPumpPin, OUTPUT);
+  pinMode(stepmotorPowerPin, OUTPUT);
 
   // Nema 17 Enable
   digitalWrite(enablePin, LOW); // enable the motor
   digitalWrite(dirPin, LOW); // Set direction 
 
-  // Initialize the flow sensor
-  flowSensor.begin(flowSensorISR);
-  // Start the Serial communication
-  Serial.begin(9600);
+  // Attach interrupt to the flow sensor pin
+  attachInterrupt(digitalPinToInterrupt(flowSensorPin), pulseCounter, FALLING);
+
   // pump is off to start
   digitalWrite(waterPumpPin, LOW);
 
@@ -104,6 +115,7 @@ void loop() {
     displayMessage("Processing.");
     int hasObsacaleStartPoint = digitalRead(startPointIR);
     if(hasObsacaleStartPoint == LOW) {
+      stopStepMotor();
       displayMessage("Conevey start");
       digitalWrite(conveyorMotorPin, HIGH);
       int hasObsacleproximitySensor = digitalRead(proximitySensorPin);
@@ -113,15 +125,21 @@ void loop() {
         int hasObsaclebottelCheckIR = digitalRead(bottelCheckIR);
         if(hasObsaclebottelCheckIR == HIGH) {
           delay(2000);
+          startStepMotor();
           moveBottleToHolder(200);
+          stopStepMotor();
           delay(4000);
           fillBottle(volume);
+          startStepMotor();
           moveBottleToHolder(300);
+          stopStepMotor();
           capBottle();
 
           displayMessage("Capping is done.");
           delay(2000);
+          startStepMotor();
           moveBottleToHolder(100);
+          stopStepMotor();
           int hasObsacleCappCheckIR = digitalRead(CappCheckIR);
           if(hasObsacleCappCheckIR == HIGH) {
             displayMessage("Capp not found");
@@ -138,9 +156,13 @@ void loop() {
             }
           } else {
             displayMessage("Capp ok");
+            startStepMotor();
             moveBottleToHolder(400);
+            stopStepMotor();
             digitalWrite(dirPin, HIGH);
+            startStepMotor();
             moveBottleToHolder(400);
+            stopStepMotor();
             digitalWrite(dirPin, LOW);
           }
         }
@@ -148,6 +170,7 @@ void loop() {
       
     }else {
       stopConveyor();
+      startStepMotor();
       moveBottleToHolderToStart();
     }
   } else {
@@ -165,11 +188,11 @@ void displayFlowVolume(float flowRate, float totalVolume) {
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("Flow Rate: ");
-  lcd.print(flowRate/10, 1);  // Print with 1 decimal place
+  lcd.print(flowRate, 1);  // Print with 1 decimal place
   lcd.print(" mL/min");
   lcd.setCursor(0, 1);
   lcd.print("Total Vol: ");
-  lcd.print(totalVolume/10, 1);  // Print with 1 decimal place
+  lcd.print(totalVolume, 1);  // Print with 1 decimal place
   lcd.print(" mL");
 }
 
@@ -198,22 +221,29 @@ void stopConveyor() {
 
 
 void fillBottle(int limit) {
-  digitalWrite(waterPumpPin, HIGH);  // Turn the water pump on by activating the relay
-  flowSensor.resetPulse();
-  int delaytime = limit * 32;
-  delay(delaytime);
+  digitalWrite(waterPumpPin, HIGH);  // Turn the water pump on 
+  pulseCount = 0;  // Reset pulse count
+  unsigned long startTime = millis();
+  unsigned long duration = limit * 32; 
+
+  while (millis() - startTime < duration) {
+    // Wait for the duration
+  }
   digitalWrite(waterPumpPin, LOW);
-  flowSensor.read(0); // Pass 0 if no additional calibration is needed
-  float flowRate = flowSensor.getFlowRate_m();// Calculate flow rate in L/min
-  float totalVolume = flowSensor.getVolume();
+
+  // Calculate the flow rate
+  float timeElapsed = (millis() - startTime) / 1000.0;  // Time in seconds
+  flowRate = (pulseCount / calibrationFactor) / timeElapsed;  // Flow rate in L/min
+  totalVolume += (pulseCount / calibrationFactor) / 1000.0;  // Total volume in liters
+
   displayFlowVolume(flowRate, totalVolume);
 }
 
-
-//Interrupt Service Routine for the flow sensor
-void flowSensorISR() {
-  flowSensor.count();
+// Interrupt service routine to count pulses
+void pulseCounter() {
+  pulseCount++;
 }
+
 
 void capBottle() {
   servo.write(180);//Turn SG90 servo Left to 180 degrees
@@ -278,4 +308,13 @@ void beep(unsigned int frequency, unsigned long duration) {
   tone(buzzerPin, frequency, duration); 
   delay(duration);                    
   noTone(buzzerPin);                    
+}
+
+void startStepMotor() {
+  digitalWrite(stepmotorPowerPin,HIGH);
+}
+
+
+void stopStepMotor() {
+  digitalWrite(stepmotorPowerPin,LOW);
 }
