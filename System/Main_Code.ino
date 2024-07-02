@@ -130,6 +130,7 @@ void loop() {
           stopStepMotor();
           delay(4000);
           fillBottle(volume);
+          delay(2000);
           startStepMotor();
           moveBottleToHolder(300);
           stopStepMotor();
@@ -182,6 +183,7 @@ void displayMessage(const char* data) {
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print(data);
+  delay(500);
 }
 
 void displayFlowVolume(float flowRate, float totalVolume) {
