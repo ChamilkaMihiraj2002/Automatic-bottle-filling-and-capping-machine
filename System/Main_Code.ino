@@ -132,7 +132,7 @@ void loop() {
           fillBottle(volume);
           delay(2000);
           startStepMotor();
-          moveBottleToHolder(300);
+          moveBottleToHolder(350);
           stopStepMotor();
           capBottle();
 
