@@ -110,37 +110,52 @@ void setup() {
   
 }
 
+int p=0;
 void loop() {
   if (key == 'A') {
     displayMessage("Processing.");
     int hasObsacaleStartPoint = digitalRead(startPointIR);
     if(hasObsacaleStartPoint == LOW) {
       stopStepMotor();
+      p=1;
       displayMessage("Conevey start");
       digitalWrite(conveyorMotorPin, HIGH);
       int hasObsacleproximitySensor = digitalRead(proximitySensorPin);
       if(hasObsacleproximitySensor == LOW) {
+        delay(2000);
         stopConveyor();
         displayMessage("Bottel Set..");
         int hasObsaclebottelCheckIR = digitalRead(bottelCheckIR);
         if(hasObsaclebottelCheckIR == HIGH) {
           delay(2000);
+          servo.write(180);
           startStepMotor();
-          moveBottleToHolder(200);
+          moveBottleToHolder(165);
           stopStepMotor();
           delay(4000);
           fillBottle(volume);
           delay(2000);
           startStepMotor();
-          moveBottleToHolder(350);
+          moveBottleToHolder(642);
           stopStepMotor();
+          digitalWrite(dirPin, HIGH);
+          startStepMotor();
+          moveBottleToHolder(67);
+          stopStepMotor();
+          digitalWrite(dirPin, LOW);
+          delay(2000);
           capBottle();
-
           displayMessage("Capping is done.");
           delay(2000);
+          p=0;
           startStepMotor();
-          moveBottleToHolder(100);
+          moveBottleToHolder(150);
           stopStepMotor();
+          digitalWrite(dirPin, HIGH);
+          startStepMotor();
+          moveBottleToHolder(0);
+          stopStepMotor();
+          digitalWrite(dirPin, LOW);
           int hasObsacleCappCheckIR = digitalRead(CappCheckIR);
           if(hasObsacleCappCheckIR == HIGH) {
             displayMessage("Capp not found");
@@ -160,12 +175,10 @@ void loop() {
             startStepMotor();
             moveBottleToHolder(400);
             stopStepMotor();
-            digitalWrite(dirPin, HIGH);
-            startStepMotor();
-            moveBottleToHolder(400);
-            stopStepMotor();
-            digitalWrite(dirPin, LOW);
           }
+        } else {
+          stopConveyor();
+          beep(1000, 500);
         }
       }
       
@@ -173,6 +186,8 @@ void loop() {
       stopConveyor();
       startStepMotor();
       moveBottleToHolderToStart();
+      moveBottleToHolder(5);
+
     }
   } else {
     key = getKey();
@@ -183,7 +198,6 @@ void displayMessage(const char* data) {
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print(data);
-  delay(500);
 }
 
 void displayFlowVolume(float flowRate, float totalVolume) {
@@ -248,14 +262,14 @@ void pulseCounter() {
 
 
 void capBottle() {
-  servo.write(180);//Turn SG90 servo Left to 180 degrees
+  servo.write(0);//Turn SG90 servo Left to 180 degrees
   capMotorRun();          
-  servo.write(0);//Turn SG90 servo to 0 degrees
+  servo.write(180);//Turn SG90 servo to 0 degrees
 }
 
 void capMotorRun() {
   digitalWrite(capperMotorPin, HIGH);
-  delay(2000);
+  delay(15000);
   digitalWrite(capperMotorPin, LOW);
 }
 
