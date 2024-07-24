@@ -10,6 +10,7 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 // Keypad setup
 const byte ROWS = 4; // Four rows
 const byte COLS = 4; // Four columns
+
 char keys[ROWS][COLS] = {
   {'1', '2', '3', 'A'},
   {'4', '5', '6', 'B'},
@@ -119,7 +120,6 @@ void loop() {
       stopStepMotor();
       p=1;
       displayMessage("Conevey start");
-      digitalWrite(conveyorMotorPin, HIGH);
       int hasObsacleproximitySensor = digitalRead(proximitySensorPin);
       if(hasObsacleproximitySensor == LOW) {
         delay(2000);
@@ -161,7 +161,7 @@ void loop() {
             displayMessage("Capp not found");
             beep(1000, 500);
             while (true) {
-              displayMessage("Press 'A' to restart");
+              displayMessage("Press 'A'");
               key = getKey();
               if (key == 'A')
               {
@@ -179,9 +179,20 @@ void loop() {
         } else {
           stopConveyor();
           beep(1000, 500);
+          while (true) {
+              displayMessage("Press 'A'");
+              key = getKey();
+              if (key == 'A')
+              {
+                key = '\0';// Reset the code
+                loop();
+                break;
+              }
+          }
         }
-      }
-      
+      } else {
+        digitalWrite(conveyorMotorPin, HIGH);
+      } 
     }else {
       stopConveyor();
       startStepMotor();
