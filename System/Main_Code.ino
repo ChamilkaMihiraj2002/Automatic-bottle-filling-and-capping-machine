@@ -10,7 +10,6 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 // Keypad setup
 const byte ROWS = 4; // Four rows
 const byte COLS = 4; // Four columns
-
 char keys[ROWS][COLS] = {
   {'1', '2', '3', 'A'},
   {'4', '5', '6', 'B'},
@@ -192,7 +191,8 @@ void loop() {
         }
       } else {
         digitalWrite(conveyorMotorPin, HIGH);
-      } 
+      }
+      
     }else {
       stopConveyor();
       startStepMotor();
