@@ -110,14 +110,12 @@ void setup() {
   
 }
 
-int p=0;
 void loop() {
   if (key == 'A') {
     displayMessage("Processing.");
     int hasObsacaleStartPoint = digitalRead(startPointIR);
     if(hasObsacaleStartPoint == LOW) {
       stopStepMotor();
-      p=1;
       displayMessage("Conevey start");
       int hasObsacleproximitySensor = digitalRead(proximitySensorPin);
       if(hasObsacleproximitySensor == LOW) {
@@ -146,7 +144,6 @@ void loop() {
           capBottle();
           displayMessage("Capping is done.");
           delay(2000);
-          p=0;
           startStepMotor();
           moveBottleToHolder(150);
           stopStepMotor();
